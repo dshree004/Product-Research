@@ -1,8 +1,8 @@
 {
   "name": "Product Rater",
   "short_name": "Rater",
-  "description": "Snap a product photo and save a star rating with notes — offline and installable.",
-  "start_url": "/Product-Research/",
+  "description": "Rate products with notes & photos — works offline.",
+  "start_url": "/Product-Research/index.html",
   "scope": "/Product-Research/",
   "display": "standalone",
   "orientation": "portrait",
