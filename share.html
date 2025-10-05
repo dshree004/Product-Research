@@ -4,9 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Share — Product Rater</title>
+
+  <!-- PWA hooks so Android can show the A2HS prompt from this page -->
+  <link rel="manifest" href="/Product-Research/manifest.webmanifest">
   <link rel="icon" href="/Product-Research/icons/icon-192.png">
   <link rel="apple-touch-icon" href="/Product-Research/icons/icon-192.png">
   <meta name="theme-color" content="#0b1020" />
+
   <style>
     :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff;--border:#223066}
     *,*::before,*::after{ box-sizing:border-box; }
@@ -56,7 +60,9 @@
       appearance:none; background:#1a2550; border:1px solid #3a4a86;
       color:#e8edff; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer
     }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
     .hint{ color:var(--mut); font-size:13px; margin-top:10px }
+    .ok{ background:#238636; border-color:#2ea043 }
   </style>
 </head>
 <body>
@@ -70,13 +76,17 @@
       <a class="cta" id="openApp" href="https://dshree004.github.io/Product-Research/">🚀 Open the App</a>
 
       <div class="panel">
-        <h3 style="margin:0 0 8px">Share the link</h3>
+        <h3 style="margin:0 0 8px">Share or Add to Home screen</h3>
         <div class="url" id="appUrl">https://dshree004.github.io/Product-Research/</div>
         <div class="btns">
           <button id="copyBtn">Copy link</button>
           <button id="shareBtn">Share…</button>
+          <!-- Shown only on Android when beforeinstallprompt fires -->
+          <button id="installBtn" style="display:none">Add to Home screen</button>
         </div>
-        <div class="hint">Android: ⋮ → <b>Add to Home screen</b> • iPhone: Share → <b>Add to Home Screen</b></div>
+        <div class="hint" id="hintText">
+          Android: ⋮ → <b>Add to Home screen</b> • iPhone: Share → <b>Add to Home Screen</b>
+        </div>
       </div>
     </div>
   </div>
@@ -105,6 +115,51 @@
         alert("Link copied! Share it anywhere.");
       }
     };
+
+    // ---- One-tap "Add to Home screen" (Android/Chrome) ----
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    // If already installed, hide the hint/button
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      installBtn.style.display = 'none';
+      document.getElementById('hintText').textContent = "Already added to Home screen ✔";
+    }
+
+    // Chrome/Edge will fire this when install criteria are met
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();        // no mini-infobar
+      deferredPrompt = e;
+      installBtn.style.display = 'inline-block';
+
+      installBtn.onclick = async () => {
+        installBtn.disabled = true;
+        try {
+          await deferredPrompt.prompt();
+          const choice = await deferredPrompt.userChoice; // { outcome: 'accepted'|'dismissed' }
+          if (choice && choice.outcome === 'accepted') {
+            installBtn.textContent = 'Added';
+            installBtn.classList.add('ok');
+          } else {
+            installBtn.disabled = false;
+          }
+        } finally {
+          deferredPrompt = null;
+        }
+      };
+    });
+
+    // When actually installed
+    window.addEventListener('appinstalled', () => {
+      installBtn.style.display = 'none';
+      document.getElementById('hintText').textContent = "Added to Home screen ✔";
+    });
+
+    // Register service worker so this page satisfies installability checks too
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/Product-Research/sw.js?v=3').catch(()=>{});
+    }
   </script>
 </body>
 </html>
