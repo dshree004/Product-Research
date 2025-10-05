@@ -5,14 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>📸 Product Rater</title>
 
-<!-- PWA -->
+<!-- PWA meta/links -->
 <link rel="manifest" href="/Product-Research/manifest.webmanifest">
 <link rel="icon" href="/Product-Research/icons/icon-192.png">
-<link rel="apple-touch-icon" href="/Product-Research/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/Product-Research/icons/icon-180.png">
 <meta name="theme-color" content="#0b1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<!-- ZIP builder (CDN) -->
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<!-- Local JSZip (for offline export) -->
+<script src="/Product-Research/libs/jszip.min.js"></script>
 
 <style>
   :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff;--border:#223066;--gutter:18px}
@@ -45,7 +47,6 @@
   button{background:#1a55ff;border:none;cursor:pointer}
   button:hover{background:#3a6eff}
 
-  /* small secondary button */
   .btn-sm{width:auto;display:inline-block;padding:6px 10px;font-size:13px;border-radius:8px;
           background:#23306b;border:1px solid #3a4a86}
   .btn-sm:disabled{opacity:.6;cursor:not-allowed}
@@ -231,14 +232,13 @@
 
   /* ---------- Export ZIP (data.json + photos/) ---------- */
   async function exportZIP(items){
-    if (!window.JSZip){ alert('ZIP library not loaded. Please go online once and try again.'); return; }
+    if (!window.JSZip){ alert('ZIP library not loaded. Open online once, or check libs/jszip.min.js'); return; }
     const zip = new JSZip();
 
     const payload = { version: 3, exportedAt: new Date().toISOString(), items: [] };
     let photoIndex = 1;
 
     for (const it of items){
-      // Back-compat: map old 'rating' to new 'niche' if needed
       const niche = (typeof it.niche === 'number' && it.niche>0) ? it.niche
                     : (typeof it.rating === 'number' ? it.rating : 0);
 
@@ -376,7 +376,7 @@
 
   /* ---------- PWA: register SW (bump to bust cache) ---------- */
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/Product-Research/sw.js?v=15').catch(()=>{});
+    navigator.serviceWorker.register('/Product-Research/sw.js?v=17').catch(()=>{});
   }
 </script>
 </body>
