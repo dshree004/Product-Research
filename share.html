@@ -1,27 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Share — Product Rater</title>
 <link rel="icon" href="/Product-Research/icons/icon-192.png">
-<meta name="theme-color" content="#0b1020">
+<meta name="theme-color" content="#0b1020" />
 <style>
   :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:#eef;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:18px}
-  .wrap{max-width:720px;width:100%}
-  .card{background:linear-gradient(180deg,#101936,#0e1530);border:1px solid #223066;border-radius:18px;box-shadow:0 10px 30px rgba(10,18,45,.35);padding:22px;text-align:center}
-  h1{margin:8px 0 4px}
+  .wrap{max-width:700px;width:100%}
+  .card{background:linear-gradient(180deg,#101936,#0e1530);border:1px solid #223066;border-radius:18px;box-shadow:0 10px 30px rgba(10,18,45,.35);padding:24px;text-align:center}
+  h1{margin:10px 0 6px}
   .tag{display:inline-block;margin-top:4px;background:#1b2448;border:1px solid #2a386b;color:#cbd5ff;border-radius:999px;padding:4px 10px;font-size:12px}
   .cta{display:inline-block;margin-top:16px;background:#3a6eff;border:1px solid #6ea8ff;color:#fff;text-decoration:none;font-weight:700;border-radius:12px;padding:12px 18px}
-  .row{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:18px}
-  .panel{flex:1 1 260px;min-width:260px;background:#0c1330;border:1px solid #223066;border-radius:14px;padding:16px}
-  #qrcode{display:flex;align-items:center;justify-content:center}
-  .hint{color:var(--mut);font-size:13px;margin-top:8px}
+  .panel{margin-top:18px;background:#0c1330;border:1px solid #223066;border-radius:14px;padding:16px}
+  .url{word-break:break-all;color:#cfe1ff;background:#0a1128;border:1px solid #223066;padding:8px;border-radius:8px;margin-top:8px;font-size:13px}
   .btns{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
   button{appearance:none;background:#1a2550;border:1px solid #3a4a86;color:#e8edff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
-  .url{word-break:break-all;color:#cfe1ff;background:#0a1128;border:1px solid #223066;padding:8px;border-radius:8px;margin-top:8px;font-size:12px}
+  .hint{color:var(--mut);font-size:13px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -33,60 +31,42 @@
 
       <a class="cta" id="openApp" href="https://dshree004.github.io/Product-Research/">🚀 Open the App</a>
 
-      <div class="row">
-        <div class="panel">
-          <h3 style="margin:0 0 8px">Scan to open</h3>
-          <div id="qrcode" style="height:240px"></div>
-          <div class="hint">Point your phone camera at the QR.</div>
+      <div class="panel">
+        <h3 style="margin:0 0 8px">Share the link</h3>
+        <div class="url" id="appUrl">https://dshree004.github.io/Product-Research/</div>
+        <div class="btns">
+          <button id="copyBtn">Copy link</button>
+          <button id="shareBtn">Share…</button>
         </div>
-        <div class="panel">
-          <h3 style="margin:0 0 8px">Share the link</h3>
-          <div class="url" id="appUrl">https://dshree004.github.io/Product-Research/</div>
-          <div class="btns">
-            <button id="copyBtn">Copy link</button>
-            <button id="shareBtn">Share…</button>
-          </div>
-          <div class="hint">Android: “Install App” in menu · iPhone: Share → Add to Home Screen</div>
-        </div>
+        <div class="hint">Android: “Install App” in menu • iPhone: Share → Add to Home Screen</div>
       </div>
     </div>
   </div>
 
 <script>
-  // --- Config: your live app URL ---
+  // Your app URL
   const APP_URL = "https://dshree004.github.io/Product-Research/";
 
-  // Keep text in UI synced
+  // Sync UI
   document.getElementById('appUrl').textContent = APP_URL;
   document.getElementById('openApp').href = APP_URL;
 
-  // Copy & Share buttons
+  // Copy to clipboard
   document.getElementById('copyBtn').onclick = async () => {
-    try{ await navigator.clipboard.writeText(APP_URL); alert("Link copied!"); }
-    catch{ alert("Copy failed. Long-press the link to copy."); }
+    try { await navigator.clipboard.writeText(APP_URL); alert("Link copied!"); }
+    catch { alert("Copy failed. Long-press the link to copy."); }
   };
+
+  // Native share (fallback to copy)
   document.getElementById('shareBtn').onclick = async () => {
     if (navigator.share) {
-      try{ await navigator.share({ title: "Product Rater", text: "Try this offline app:", url: APP_URL }); }catch(e){}
+      try { await navigator.share({ title: "Product Rater", text: "Try this offline app:", url: APP_URL }); }
+      catch(e){} // user canceled
     } else {
       await navigator.clipboard.writeText(APP_URL);
       alert("Link copied! Share it anywhere.");
     }
   };
-
-  // --- Tiny QR generator (no CDN) ---
-  // Based on Kazuhiko Arase's QRCode for JavaScript (MIT) – trimmed & inlined.
-  // Source: https://github.com/kazuhikoarase/qrcode-generator (minimized for brevity)
-  // BEGIN MINIFIED QR
-  /*! qrcode-generator (minimal) */
-  (function(){function p(a){this.mode=b.MODE_8BIT_BYTE;this.data=a}function q(a,c){this.typeNumber=a;this.errorCorrectLevel=c;this.modules=null;this.moduleCount=0;this.dataCache=null;this.dataList=[]}var b={PAD0:236,PAD1:17,MODE_8BIT_BYTE:4,ErrorCorrectLevel:{L:1,M:0,Q:3,H:2}};p.prototype={getLength:function(){return this.data.length},write:function(a){for(var c=0;c<this.data.length;c++){var d=this.data.charCodeAt(c);128>d?a.put(d,8):2048>d?(a.put(192|d>>6,8),a.put(128|63&d,8)):(a.put(224|d>>12,8),a.put(128|d>>6,8),a.put(128|63&d,8))}};q.prototype={addData:function(a){this.dataList.push(new p(a));this.dataCache=null},isDark:function(a,c){if(null==this.modules)throw Error("QR not generated");return this.modules[a][c]},getModuleCount:function(){return this.moduleCount},make:function(){var a=1;for(this.typeNumber=a;this.typeNumber<40&&!(this.makeImpl(!1),this.isTooSmall());)this.typeNumber++},isTooSmall:function(){for(var a=this.getLengthInBits(this.typeNumber),c=0;c<this.dataList.length;c++)a+=8*this.dataList[c].getLength();return a>this.getMaxDataBits(this.typeNumber)},makeImpl:function(a){this.moduleCount=4*this.typeNumber+17;this.modules=Array(this.moduleCount);for(a=0;a<this.moduleCount;a++){this.modules[a]=Array(this.moduleCount);for(var c=0;c<this.moduleCount;c++)this.modules[a][c]=null}this.setupPositionProbePattern(0,0);this.setupPositionProbePattern(this.moduleCount-7,0);this.setupPositionProbePattern(0,this.moduleCount-7);this.mapData(this.createData())},setupPositionProbePattern:function(a,c){for(var d=-1;7>=d;d++)if(!(0>a+d||this.moduleCount<=a+d))for(var e=-1;7>=e;e++)0>c+e||this.moduleCount<=c+e||(this.modules[a+d][c+e]=0<=d&&d<=6&&(0==e||6==e)||0<=e&&e<=6&&(0==d||6==d)||2<=d&&d<=4&&2<=e&&e<=4)},mapData:function(a){for(var c=0,d=this.moduleCount-1,e=this.moduleCount-1,f=1;0<=e;e-=2){for(6==e&&e--;0<=d;d+=f){for(var g=0;2>g;g++)null==this.modules[d][e-g]&&(c<this.getTotalDataCount()?this.modules[d][e-g]=1==(a[c>>3]>>>7-(c%8)&1):this.modules[d][e-g]=!1,c++);d+=f}f*=-1;d+=f}},createData:function(){for(var a=0,c=0;c<this.dataList.length;c++)a+=this.dataList[c].getLength();var d=[];for(c=0;c<this.dataList.length;c++)d.push(this.dataList[c]);c=new r;c.put(4,4);c.put(a,8);for(a=0;a<d.length;a++)d[a].write(c);for(a=this.getMaxDataBits(this.typeNumber)-c.getLengthInBits();0<a;)8<=a?(c.put(0,8),a-=8):(c.put(0,a),a=0);for(a=[];a.length<c.buffer.length;)a.push(c.buffer[a.length]);for(;a.length<this.getMaxDataCount();)a.push(0==a.length%2?b.PAD0:b.PAD1);return a},getLengthInBits:function(a){return 4+8},getMaxDataBits:function(a){return 8*this.getMaxDataCount()},getMaxDataCount:function(a){a=4*a+17;return Math.floor((a*a-64)/8)}};
-  function r(){this.buffer=[];this.length=0}r.prototype={getLengthInBits:function(){return this.length},put:function(a,c){for(var d=0;d<c;d++)this.buffer.push(1==(a>>>c-d-1&1)?255:0),this.length++}};
-  function makeQR(text,size){var qr=new q(1,b.ErrorCorrectLevel.M);qr.addData(text);qr.make();var count=qr.getModuleCount(),scale=Math.floor(size/count),pad=Math.floor((size-count*scale)/2),s='<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'"><rect width="100%" height="100%" fill="#fff"/>';for(var r0=0;r0<count;r0++){for(var c0=0;c0<count;c0++){if(qr.isDark(r0,c0)){var x=pad+c0*scale,y=pad+r0*scale;s+='<rect x="'+x+'" y="'+y+'" width="'+scale+'" height="'+scale+'" fill="#000"/>';}}}s+='</svg>';return s;}
-  // END MINIFIED QR
-
-  // Render QR
-  const svg = makeQR(APP_URL, 220);
-  document.getElementById('qrcode').innerHTML = svg;
 </script>
 </body>
 </html>
