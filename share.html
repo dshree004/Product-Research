@@ -13,8 +13,8 @@
 
   <style>
     :root{
-      --bg:#0b1020; --card:#111832; --mut:#aab3d4; --acc:#6ea8ff; --border:#223066;
-      --pad:24px; --gap:16px;
+      --bg:#0b1020; --card:#111832; --mut:#aab3d4; --border:#223066;
+      --pad:24px; --gap:14px;
     }
     *,*::before,*::after{ box-sizing:border-box; }
     html,body{ height:auto; min-height:100dvh; -webkit-text-size-adjust:100%; }
@@ -62,29 +62,31 @@
       margin-top:10px; font-size:14px
     }
 
-    /* Responsive grid for buttons — no squeeze, no clipping */
+    /* ALWAYS stacked full-width buttons: zero chance of clipping */
     .btns{
       display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: 1fr;
       gap:var(--gap);
       margin-top:14px;
       width:100%;
-      overflow:visible;
     }
     button{
       -webkit-appearance:none; appearance:none;
       background:#1a2550; border:1px solid #3a4a86; color:#e8edff;
-      border-radius:12px; padding:12px 22px; font-weight:600; cursor:pointer;
-      display:inline-flex; align-items:center; justify-content:center;
-      min-height:46px; line-height:1.25; white-space:nowrap;
+      border-radius:12px; padding:14px 22px; font-weight:600; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      min-height:52px; line-height:1.3; text-align:center;
+      white-space:normal; word-break:keep-all;
       width:100%; box-sizing:border-box; overflow:visible; text-overflow:clip;
+      font-size:16px;
     }
     button:disabled{ opacity:.6; cursor:not-allowed; }
     .hint{ color:var(--mut); font-size:13px; margin-top:12px }
     .ok{ background:#238636; border-color:#2ea043 }
 
-    @media (max-width:420px){
-      :root{ --pad:26px; --gap:18px; }
+    @media (min-width:980px){
+      /* Optional: on wide desktops, two columns look nice */
+      .btns{ grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -100,7 +102,8 @@
 
       <div class="panel">
         <h3 style="margin:0 0 10px">Share or Add to Home screen</h3>
-        <div class="url" id="appUrl">https://dshree004.github.io/Product-Research/</div>
+        <!-- Visible URL WITHOUT protocol -->
+        <div class="url" id="appUrl">dshree004.github.io/Product-Research/</div>
 
         <div class="btns">
           <button id="copyBtn">Copy link</button>
@@ -117,20 +120,21 @@
   </div>
 
   <script>
-    // Your app URL
+    // Full app URL (kept for open/copy/share), but display without protocol
     const APP_URL = "https://dshree004.github.io/Product-Research/";
+    const DISPLAY_URL = APP_URL.replace(/^https?:\/\//, "");
 
     // Sync UI
-    document.getElementById('appUrl').textContent = APP_URL;
+    document.getElementById('appUrl').textContent = DISPLAY_URL;
     document.getElementById('openApp').href = APP_URL;
 
-    // Copy to clipboard
+    // Copy to clipboard (full https URL)
     document.getElementById('copyBtn').onclick = async () => {
       try { await navigator.clipboard.writeText(APP_URL); alert("Link copied!"); }
       catch { alert("Copy failed. Long-press the link to copy."); }
     };
 
-    // Native share (fallback to copy)
+    // Native share (full https URL; fallback to copy)
     document.getElementById('shareBtn').onclick = async () => {
       if (navigator.share) {
         try { await navigator.share({ title: "Product Rater", text: "Try this offline app:", url: APP_URL }); }
@@ -156,7 +160,7 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();        // no mini-infobar
       deferredPrompt = e;
-      installBtn.style.display = 'inline-flex';
+      installBtn.style.display = 'flex';
 
       installBtn.onclick = async () => {
         installBtn.disabled = true;
@@ -181,9 +185,9 @@
       document.getElementById('hintText').textContent = "Added to Home screen ✔";
     });
 
-    // Register service worker so this page satisfies installability checks too
+    // Register SW so this page satisfies installability checks too
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/Product-Research/sw.js?v=5').catch(()=>{});
+      navigator.serviceWorker.register('/Product-Research/sw.js?v=7').catch(()=>{});
     }
   </script>
 </body>
