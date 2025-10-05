@@ -11,13 +11,10 @@
 <link rel="apple-touch-icon" href="/Product-Research/icons/icon-192.png">
 <meta name="theme-color" content="#0b1020">
 
-<!-- ZIP builder (CDN). If you prefer local, upload jszip.min.js to your repo and change the src. -->
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-
 <style>
-  :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff;--border:#223066;--gutter:16px}
-  *,*::before,*::after{ box-sizing:border-box; }
-  html,body{height:100%}
+  :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff;--border:#223066;--gutter:18px}
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{height:auto;min-height:100dvh}
   body{
     font-family:Inter,Arial,sans-serif;background:var(--bg);color:#eef;margin:0;
     padding:20px;
@@ -35,8 +32,7 @@
     overflow:visible;
   }
 
-  /* form */
-  #form{ display:grid; gap:12px; }
+  #form{display:grid;gap:12px}
   label{font-weight:600;display:block}
   input,textarea,button{
     width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);
@@ -45,31 +41,22 @@
   textarea{min-height:90px}
   button{background:#1a55ff;border:none;cursor:pointer}
   button:hover{background:#3a6eff}
-  button:disabled{opacity:.6;cursor:not-allowed}
 
-  /* rating */
-  .rating{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .rating{display:grid;grid-template-columns:repeat(5,minmax(44px,1fr));gap:8px}
   .rating input{display:none}
   .rating label{background:#192040;text-align:center;padding:10px;border-radius:10px;cursor:pointer}
   .rating input:checked+label{background:#4473ff;color:#fff}
 
-  /* media */
   .preview{width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid var(--border);display:none}
   .thumb{width:48px;height:48px;object-fit:cover;border-radius:8px;background:#0b132b}
 
-  /* list/table */
+  .muted{opacity:.8}
+
   .table-wrap{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 8px}
   .table{width:100%;border-collapse:collapse;table-layout:fixed}
   .table th,.table td{border-top:1px solid var(--border);padding:10px;text-align:left;vertical-align:top;word-wrap:break-word}
   .table th{color:#a9c7ff;font-weight:700}
-  .muted{opacity:.8}
 
-  /* actions */
-  .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin:8px 0 0}
-  .btn-secondary{background:#23306b}
-  .btn-secondary:hover{background:#2c3a7f}
-
-  /* mobile cards */
   .cards{display:none;gap:10px}
   .entry-card{
     display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;
@@ -79,10 +66,7 @@
   .entry-card .meta{font-size:13px;color:#aab3d4}
   .entry-card .pill{display:inline-block;background:#1b2448;border:1px solid #2a386b;border-radius:999px;padding:2px 8px;font-size:12px;color:#cbd5ff;margin-right:6px}
 
-  @media (max-width: 640px){
-    :root{ --gutter:18px; }
-    .card{max-width: 100%;}
-    .rating{grid-template-columns: repeat(5, minmax(44px,1fr))}
+  @media (max-width:640px){
     .table-wrap{display:none}
     .cards{display:grid}
   }
@@ -94,13 +78,13 @@
   <div class="card">
     <form id="form">
       <label>Product name *</label>
-      <input id="name" required />
+      <input id="name" required autocomplete="off" />
 
       <label>Category</label>
-      <input id="category" />
+      <input id="category" autocomplete="off" />
 
       <label>Code/SKU</label>
-      <input id="sku" />
+      <input id="sku" autocomplete="off" />
 
       <label>Rating *</label>
       <div class="rating">
@@ -111,8 +95,8 @@
         <input id="r5" type="radio" name="rating" value="5"><label for="r5">5</label>
       </div>
 
-      <label>Photo <span class="muted">(optional)</span></label>
-      <input id="photo" type="file" accept="image/*" />
+      <label>Photo <span class="muted">(optional · auto-sized to a small square)</span></label>
+      <input id="photo" type="file" accept="image/*" capture="environment" />
       <img id="preview" class="preview" alt="preview" />
 
       <label>Notes</label>
@@ -124,12 +108,7 @@
 
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <h2 style="margin:0 0 8px">Your entries</h2>
-      <div class="actions">
-        <button type="button" id="exportCsv" class="btn-secondary" disabled>Export CSV</button>
-        <button type="button" id="exportJson" class="btn-secondary" disabled>Export JSON (with photos)</button>
-        <button type="button" id="exportZip" class="btn-secondary" disabled>Export ZIP (CSV + photos)</button>
-      </div>
+      <h2 style="margin:0 0 8px">Your entries <span id="count" class="muted"></span></h2>
     </div>
 
     <!-- Mobile cards -->
@@ -146,27 +125,54 @@
   const $ = s => document.querySelector(s);
   function escapeHTML(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
   function getRating(){ const r=document.querySelector('input[name="rating"]:checked'); return r?parseInt(r.value,10):0; }
-  function safeFile(s){ return (s||'item').toLowerCase().replace(/[^a-z0-9._-]+/g,'-').slice(0,40); }
 
-  /* ---------- Photo preview ---------- */
-  $('#photo').addEventListener('change', e=>{
+  /* ---------- Photo preview + compress to square 256px ---------- */
+  const TARGET = 256;  // thumbnail size
+  async function fileToSquareThumb(file){
+    const img = await new Promise((res,rej)=>{
+      const fr = new FileReader();
+      fr.onload = () => { const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=fr.result; };
+      fr.onerror = rej;
+      fr.readAsDataURL(file);
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = TARGET;
+    const ctx = canvas.getContext('2d');
+    // cover-fit crop to square
+    const scale = Math.max(TARGET/img.width, TARGET/img.height);
+    const w = img.width * scale, h = img.height * scale;
+    const x = (TARGET - w)/2, y = (TARGET - h)/2;
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,TARGET,TARGET);
+    ctx.drawImage(img, x, y, w, h);
+    return canvas.toDataURL('image/jpeg', 0.8); // small, fast
+  }
+
+  $('#photo').addEventListener('change', async e=>{
     const file=e.target.files?.[0], img=$('#preview');
     if(!file){ img.style.display='none'; delete img.dataset.dataurl; return; }
-    const rd=new FileReader();
-    rd.onload=ev=>{ img.src=ev.target.result; img.style.display='block'; img.dataset.dataurl=ev.target.result; };
-    rd.readAsDataURL(file);
+    try{
+      const thumb = await fileToSquareThumb(file);
+      img.src = thumb; img.style.display='block'; img.dataset.dataurl = thumb;
+    }catch{
+      // fallback: show raw preview
+      const fr = new FileReader();
+      fr.onload = ev => { img.src = ev.target.result; img.style.display='block'; img.dataset.dataurl = ev.target.result; };
+      fr.readAsDataURL(file);
+    }
   });
 
-  /* ---------- IndexedDB (no keyPath) ---------- */
-  const DB_NAME='ProductRaterDB_v6'; const DB_VERSION=1;
+  /* ---------- IndexedDB (bump name/version for clean start) ---------- */
+  const DB_NAME='ProductRaterDB_v8';  // bumping name avoids old broken stores
+  const DB_VERSION=2;
   let db;
   function openDB(){
     return new Promise((resolve,reject)=>{
       const req=indexedDB.open(DB_NAME,DB_VERSION);
       req.onupgradeneeded=e=>{
         const db=e.target.result;
-        if(db.objectStoreNames.contains('entries')) db.deleteObjectStore('entries');
-        db.createObjectStore('entries',{autoIncrement:true});
+        if(!db.objectStoreNames.contains('entries')){
+          db.createObjectStore('entries',{autoIncrement:true});
+        }
       };
       req.onsuccess=e=>resolve(e.target.result);
       req.onerror=e=>reject(e.target.error);
@@ -177,12 +183,14 @@
     await ensureDB();
     return new Promise((res,rej)=>{
       const tx=db.transaction('entries','readwrite');
-      const req=tx.objectStore('entries').add(entry);
+      const store=tx.objectStore('entries');
+      const req=store.add(entry);
       req.onsuccess=()=>res();
       req.onerror =()=>rej(req.error);
     });
   }
-  function getAllEntries(){
+  async function getAllEntries(){
+    await ensureDB();
     return new Promise((res,rej)=>{
       const tx=db.transaction('entries','readonly');
       const req=tx.objectStore('entries').getAll();
@@ -191,26 +199,90 @@
     });
   }
 
-  /* ---------- CSV Export ---------- */
-  function csvEscape(v){
-    const s = (v ?? '').toString().replace(/\r?\n/g,' ').replace(/"/g,'""');
-    return `"${s}"`;
-  }
-  async function exportCSV(items){
-    const header = ['Name','Category','SKU','Rating','Notes','Saved(ISO)'].map(csvEscape).join(',');
+  /* ---------- Render (mobile cards + desktop table) ---------- */
+  async function render(){
+    const items=(await getAllEntries()).sort((a,b)=> (b.ts||0)-(a.ts||0));
+    $('#count').textContent = items.length ? `(${items.length})` : '';
+
+    // Mobile cards
+    const cards=$('#cards');
+    cards.innerHTML = items.map(it=>{
+      const photo = it.photo
+        ? `<img class="thumb" src="${it.photo}" alt="">`
+        : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#9db0e0">–</div>`;
+      return `<div class="entry-card">
+        ${photo}
+        <div>
+          <div class="title">${escapeHTML(it.name)}</div>
+          <div class="meta">
+            <span class="pill">${escapeHTML(it.category||'No category')}</span>
+            ${it.sku?`<span class="pill">SKU ${escapeHTML(it.sku)}</span>`:''}
+          </div>
+          <div class="meta">Rating: ${it.rating}/5</div>
+          ${it.notes?`<div class="meta" style="margin-top:4px">${escapeHTML(it.notes)}</div>`:''}
+          <div class="meta" style="margin-top:4px">${new Date(it.ts||Date.now()).toLocaleString()}</div>
+        </div>
+      </div>`;
+    }).join('') || `<p class="muted">No entries yet.</p>`;
+
+    // Desktop table
+    const table=$('#table');
+    if(!items.length){
+      table.innerHTML = `<thead><tr><th>Photo</th><th>Name & Notes</th><th>Category</th><th>SKU</th><th>Rating</th><th>Saved</th></tr></thead><tbody></tbody>`;
+      return;
+    }
     const rows = items.map(it=>{
-      return [
-        csvEscape(it.name),
-        csvEscape(it.category||''),
-        csvEscape(it.sku||''),
-        csvEscape(it.rating),
-        csvEscape(it.notes||''),
-        csvEscape(new Date(it.ts||Date.now()).toISOString())
-      ].join(',');
-    });
-    const csv = [header, ...rows].join('\r\n');
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `product_rater_${new Date().toISOString().s
+      const date=new Date(it.ts||Date.now()).toLocaleString();
+      const photoCell=it.photo?`<img class="thumb" src="${it.photo}" alt="">`:`<span class="muted">—</span>`;
+      return `<tr>
+        <td>${photoCell}</td>
+        <td><b>${escapeHTML(it.name)}</b><br><span class="muted">${escapeHTML(it.notes||'')}</span></td>
+        <td>${escapeHTML(it.category||'—')}</td>
+        <td>${escapeHTML(it.sku||'—')}</td>
+        <td>${it.rating}/5</td>
+        <td class="muted">${date}</td>
+      </tr>`;
+    }).join('');
+    table.innerHTML = `<thead>
+      <tr><th>Photo</th><th>Name & Notes</th><th>Category</th><th>SKU</th><th>Rating</th><th>Saved</th></tr>
+    </thead><tbody>${rows}</tbody>`;
+  }
+
+  /* ---------- Save ---------- */
+  $('#form').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const name=$('#name').value.trim();
+    const rating=getRating();
+    if(!name||!rating){ alert('Please enter a product name and select a rating.'); return; }
+
+    const entry={
+      name,
+      category: $('#category').value.trim(),
+      sku: $('#sku').value.trim(),
+      rating,
+      notes: $('#notes').value.trim(),
+      photo: $('#preview').dataset?.dataurl || '',  // already small thumbnail
+      ts: Date.now()
+    };
+
+    try{
+      await addEntry(entry);
+      e.target.reset();
+      const img=$('#preview'); img.style.display='none'; delete img.dataset.dataurl;
+      await render();
+      alert('✅ Saved');
+    }catch(err){
+      console.error('Save failed:', err);
+      alert('Save failed: '+(err?.message||err));
+    }
+  });
+
+  (async()=>{ db=await openDB(); render(); })();
+
+  /* ---------- PWA: register SW (bump to bust cache) ---------- */
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/Product-Research/sw.js?v=12').catch(()=>{});
+  }
+</script>
+</body>
+</html>
