@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Rater (Offline)</title>
+<style>
+body {
+  font-family: Inter, Arial, sans-serif;
+  background: #0b1020;
+  color: #eef;
+  margin: 0;
+  padding: 20px;
+}
+.card {
+  background: #111832;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  margin-bottom: 16px;
+}
+h1 { color: #80c8ff; }
+input, textarea {
+  width: 100%;
+  padding: 6px;
+  margin-top: 4px;
+  border-radius: 6px;
+  border: 1px solid #334;
+  background: #1b2444;
+  color: #eee;
+}
+button {
+  background: #1a55ff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+button:hover { background: #3a6eff; }
+.preview-thumb {
+  width: 120px; height: 120px;
+  object-fit: cover;
+  display: block;
+  margin-top: 10px;
+  border-radius: 10px;
+}
+.entries img {
+  width: 60px; height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 10px;
+}
+.entries-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  background: #1b2444;
+  padding: 8px;
+  border-radius: 8px;
+}
+</style>
+</head>
+<body>
+<h1>📸 Product Rater (Offline)</h1>
+
+<div class="card">
+  <form id="rater-form">
+    <label>Product name *</label>
+    <input id="name" required>
+
+    <label>Category</label>
+    <input id="category">
+
+    <label>Code/SKU</label>
+    <input id="sku">
+
+    <label>Rating *</label><br>
+    <div id="rating">
+      <label><input type="radio" name="rating" value="1">1</label>
+      <label><input type="radio" name="rating" value="2">2</label>
+      <label><input type="radio" name="rating" value="3">3</label>
+      <label><input type="radio" name="rating" value="4">4</label>
+      <label><input type="radio" name="rating" value="5">5</label>
+    </div>
+
+    <label>Photo</label>
+    <input type="file" id="photo" accept="image/*">
+    <img id="preview" class="preview-thumb" style="display:none">
+
+    <label>Notes</label>
+    <textarea id="notes" rows="3"></textarea>
+
+    <button type="submit">Save</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Your entries</h2>
+  <div id="entries" class="entries"></div>
+</div>
+
+<script>
+let db;
+
+function getSelectedRating() {
+  const r = document.querySelector('input[name="rating"]:checked');
+  return r ? parseInt(r.value, 10) : 0;
+}
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("ProductRaterDB", 2);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (db.objectStoreNames.contains("entries")) db.deleteObjectStore("entries");
+      db.createObjectStore("entries", { keyPath: "id", autoIncrement: true });
+    };
+    req.onsuccess = (e) => resolve(e.target.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+async function renderEntries() {
+  const container = document.getElementById("entries");
+  container.innerHTML = "";
+  const tx = db.transaction("entries", "readonly");
+  const store = tx.objectStore("entries");
+  store.getAll().onsuccess = (e) => {
+    const items = e.target.result;
+    if
