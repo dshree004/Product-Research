@@ -1,179 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Product Rater (Offline)</title>
-<style>
-  body{font-family:Inter,Arial,sans-serif;background:#0b1020;color:#eef;margin:0;padding:20px}
-  .card{background:#111832;padding:16px;border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.45);max-width:520px;margin:0 auto 16px}
-  h1{color:#8ec5ff;text-align:center;margin:0 0 12px}
-  label{font-weight:600;display:block;margin-top:8px}
-  input,textarea,button{width:100%;padding:8px;border-radius:8px;border:1px solid #223066;background:#1b2444;color:#eef;margin-top:6px}
-  button{background:#1a55ff;border:none;cursor:pointer} button:hover{background:#3a6eff}
-  .rating{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px}
-  .rating input{display:none}
-  .rating label{background:#192040;text-align:center;padding:8px;border-radius:8px;cursor:pointer}
-  .rating input:checked+label{background:#4473ff;color:#fff}
-  .preview{width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid #223066;margin-top:10px;display:none}
-  .entry{display:flex;gap:10px;align-items:center;background:#1b2444;border-radius:10px;padding:8px;margin-top:8px}
-  .thumb{width:60px;height:60px;object-fit:cover;border-radius:8px;background:#0b132b;display:flex;align-items:center;justify-content:center;font-size:12px;color:#9db0e0}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📸 Product Rater</title>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #58a6ff;
+    }
+    .card {
+      background-color: #161b22;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 600px;
+      margin: 20px auto;
+      box-shadow: 0 0 10px rgba(88, 166, 255, 0.2);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      margin-top: 5px;
+      background-color: #0d1117;
+      color: #fff;
+    }
+    .rating {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 10px;
+    }
+    .rating label {
+      font-weight: normal;
+    }
+    .rating input {
+      margin-right: 5px;
+    }
+    button {
+      background-color: #238636;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      margin-top: 15px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #2ea043;
+    }
+    .entries {
+      margin-top: 30px;
+      background-color: #161b22;
+      border-radius: 10px;
+      padding: 15px;
+    }
+    .entry {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #30363d;
+      padding: 10px 0;
+    }
+    .entry img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+    .entry-details {
+      flex: 1;
+    }
+    .entry-details strong {
+      color: #58a6ff;
+    }
+  </style>
 </head>
 <body>
   <h1>📸 Product Rater</h1>
-
   <div class="card">
-    <form id="form">
+    <form id="raterForm">
       <label>Product name *</label>
-      <input id="name" required />
+      <input type="text" id="name" required />
 
       <label>Category</label>
-      <input id="category" />
+      <input type="text" id="category" />
 
       <label>Code/SKU</label>
-      <input id="sku" />
+      <input type="text" id="code" />
 
       <label>Rating *</label>
       <div class="rating">
-        <input id="r1" type="radio" name="rating" value="1"><label for="r1">1</label>
-        <input id="r2" type="radio" name="rating" value="2"><label for="r2">2</label>
-        <input id="r3" type="radio" name="rating" value="3"><label for="r3">3</label>
-        <input id="r4" type="radio" name="rating" value="4"><label for="r4">4</label>
-        <input id="r5" type="radio" name="rating" value="5"><label for="r5">5</label>
+        <label><input type="radio" name="rating" value="1" />1</label>
+        <label><input type="radio" name="rating" value="2" />2</label>
+        <label><input type="radio" name="rating" value="3" />3</label>
+        <label><input type="radio" name="rating" value="4" />4</label>
+        <label><input type="radio" name="rating" value="5" />5</label>
       </div>
 
-      <label>Photo <span style="font-size:12px;color:#a8b4e6">(optional)</span></label>
-      <input id="photo" type="file" accept="image/*" />
-      <img id="preview" class="preview" alt="preview" />
+      <label>Photo (optional)</label>
+      <input type="file" id="photo" accept="image/*" />
 
       <label>Notes</label>
-      <textarea id="notes" rows="3"></textarea>
+      <textarea id="notes"></textarea>
 
       <button type="submit">Save</button>
     </form>
   </div>
 
-  <div class="card">
+  <div class="entries">
     <h2>Your entries</h2>
-    <div id="list"></div>
+    <div id="entriesList"></div>
   </div>
 
-<script>
-  let db;
-  const $ = s => document.querySelector(s);
+  <script>
+    const form = document.getElementById("raterForm");
+    const entriesList = document.getElementById("entriesList");
 
-  function getSelectedRating(){
-    const r = document.querySelector('input[name="rating"]:checked');
-    return r ? parseInt(r.value,10) : 0;
-  }
-
-  // Open DB (v4) — store WITHOUT keyPath (no 'id' needed)
-  function openDB(){
-    return new Promise((resolve, reject)=>{
-      const req = indexedDB.open('ProductRaterDB', 4);
-      req.onupgradeneeded = (e)=>{
-        const db = e.target.result;
-        if (db.objectStoreNames.contains('entries')) db.deleteObjectStore('entries');
-        db.createObjectStore('entries', { autoIncrement: true }); // no keyPath
-      };
-      req.onsuccess = e => resolve(e.target.result);
-      req.onerror   = e => reject(e.target.error);
-    });
-  }
-
-  async function ensureDB(){
-    if (!db) db = await openDB();
-    return db;
-  }
-
-  function escapeHTML(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-
-  function render(){
-    const list = $('#list'); list.innerHTML = '';
-    const tx = db.transaction('entries','readonly');
-    const store = tx.objectStore('entries');
-    const req = store.getAll();
-    req.onsuccess = ()=>{
-      const items = req.result || [];
-      if (!items.length){ list.innerHTML = '<p>No entries yet.</p>'; return; }
-      items.forEach(it=>{
-        const row = document.createElement('div'); row.className='entry';
-        const media = it.photo ? `<img class="thumb" src="${it.photo}" alt="">`
-                               : `<div class="thumb">No photo</div>`;
-        row.innerHTML = `${media}<div><b>${escapeHTML(it.name)}</b><br>Rating: ${it.rating}/5<br>${escapeHTML(it.notes||'')}</div>`;
-        list.appendChild(row);
+    function loadEntries() {
+      const entries = JSON.parse(localStorage.getItem("productEntries")) || [];
+      entriesList.innerHTML = "";
+      entries.forEach((entry) => {
+        const div = document.createElement("div");
+        div.className = "entry";
+        div.innerHTML = `
+          <img src="${entry.photo || ""}" alt="photo" />
+          <div class="entry-details">
+            <strong>${entry.name}</strong><br>
+            Category: ${entry.category || "-"}<br>
+            Code: ${entry.code || "-"}<br>
+            Rating: ${entry.rating}/5<br>
+            Notes: ${entry.notes || ""}
+          </div>`;
+        entriesList.appendChild(div);
       });
-    };
-  }
+    }
 
-  // Photo preview
-  $('#photo').addEventListener('change', e=>{
-    const file = e.target.files?.[0];
-    const img = $('#preview');
-    if(!file){ img.style.display='none'; delete img.dataset.dataurl; return; }
-    const reader = new FileReader();
-    reader.onload = ev => { img.src = ev.target.result; img.style.display='block'; img.dataset.dataurl = ev.target.result; };
-    reader.readAsDataURL(file);
-  });
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const category = document.getElementById("category").value.trim();
+      const code = document.getElementById("code").value.trim();
+      const notes = document.getElementById("notes").value.trim();
+      const rating = document.querySelector('input[name="rating"]:checked')?.value;
+      const photoInput = document.getElementById("photo");
 
-  // Safe add with auto-recreate on DataError
-  async function addEntrySafe(entry){
-    await ensureDB();
-    try{
-      await new Promise((res,rej)=>{
-        const tx = db.transaction('entries','readwrite');
-        const req = tx.objectStore('entries').add(entry); // no id
-        req.onsuccess = () => res();
-        req.onerror   = () => rej(req.error);
-      });
-    }catch(err){
-      if (err && err.name === 'DataError'){
-        // old DB on disk — delete and recreate, then retry once
-        await new Promise(done => { const del = indexedDB.deleteDatabase('ProductRaterDB'); del.onsuccess=del.onerror=done; });
-        db = await openDB();
-        await new Promise((res,rej)=>{
-          const tx = db.transaction('entries','readwrite');
-          const req = tx.objectStore('entries').add(entry);
-          req.onsuccess = () => res();
-          req.onerror   = () => rej(req.error);
-        });
-      } else {
-        throw err;
+      if (!name || !rating) {
+        alert("Please enter a product name and rating.");
+        return;
       }
-    }
-  }
 
-  // Save
-  $('#form').addEventListener('submit', async e=>{
-    e.preventDefault();
-    const name = $('#name').value.trim();
-    const rating = getSelectedRating();
-    if(!name || !rating){ alert('Please enter a product name and select a rating.'); return; }
+      const reader = new FileReader();
+      reader.onload = function () {
+        const photo = photoInput.files[0] ? reader.result : "";
+        const entry = { name, category, code, rating, notes, photo };
 
-    const entry = {
-      name,
-      category: $('#category').value.trim(),
-      sku: $('#sku').value.trim(),
-      rating,
-      notes: $('#notes').value.trim(),
-      photo: $('#preview').dataset?.dataurl || '',
-      ts: Date.now()
-    };
+        const entries = JSON.parse(localStorage.getItem("productEntries")) || [];
+        entries.push(entry);
+        localStorage.setItem("productEntries", JSON.stringify(entries));
+        form.reset();
+        loadEntries();
+      };
 
-    try{
-      await addEntrySafe(entry);
-      $('#form').reset();
-      const img = $('#preview'); img.style.display='none'; delete img.dataset.dataurl;
-      render();
-      alert('✅ Saved');
-    }catch(err){
-      console.error('Save failed:', err);
-      alert('Save failed: ' + (err?.message || err));
-    }
-  });
+      if (photoInput.files[0]) {
+        reader.readAsDataURL(photoInput.files[0]);
+      } else {
+        reader.onload();
+      }
+    });
 
-  (async ()=>{ db = await openDB(); render(); })();
-</script>
+    loadEntries();
+  </script>
 </body>
 </html>
