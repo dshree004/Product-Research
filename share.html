@@ -1,31 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Share — Product Rater</title>
-<link rel="icon" href="/Product-Research/icons/icon-192.png">
-<meta name="theme-color" content="#0b1020" />
-<style>
-  :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff}
-  html,body{height:100%}
-  body{margin:0;background:var(--bg);color:#eef;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:18px}
-  .wrap{max-width:700px;width:100%}
-  .card{background:linear-gradient(180deg,#101936,#0e1530);border:1px solid #223066;border-radius:18px;box-shadow:0 10px 30px rgba(10,18,45,.35);padding:24px;text-align:center}
-  h1{margin:10px 0 6px}
-  .tag{display:inline-block;margin-top:4px;background:#1b2448;border:1px solid #2a386b;color:#cbd5ff;border-radius:999px;padding:4px 10px;font-size:12px}
-  .cta{display:inline-block;margin-top:16px;background:#3a6eff;border:1px solid #6ea8ff;color:#fff;text-decoration:none;font-weight:700;border-radius:12px;padding:12px 18px}
-  .panel{margin-top:18px;background:#0c1330;border:1px solid #223066;border-radius:14px;padding:16px}
-  .url{word-break:break-all;color:#cfe1ff;background:#0a1128;border:1px solid #223066;padding:8px;border-radius:8px;margin-top:8px;font-size:13px}
-  .btns{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
-  button{appearance:none;background:#1a2550;border:1px solid #3a4a86;color:#e8edff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
-  .hint{color:var(--mut);font-size:13px;margin-top:10px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Share — Product Rater</title>
+  <link rel="icon" href="/Product-Research/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/Product-Research/icons/icon-192.png">
+  <meta name="theme-color" content="#0b1020" />
+  <style>
+    :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff;--border:#223066}
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:auto; min-height:100dvh; }
+    body{
+      margin:0; background:var(--bg); color:#eef;
+      font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      display:flex; justify-content:center; align-items:flex-start;
+      padding:18px;
+      padding-left:  max(18px, env(safe-area-inset-left));
+      padding-right: max(18px, env(safe-area-inset-right));
+      padding-bottom:max(18px, env(safe-area-inset-bottom));
+    }
+    .wrap{ max-width:700px; width:100%; }
+    .card{
+      background:linear-gradient(180deg,#101936,#0e1530);
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:0 10px 30px rgba(10,18,45,.35);
+      padding:24px;
+      text-align:center;
+      overflow:visible;
+    }
+    h1{ margin:10px 0 6px; color:#8ec5ff }
+    .tag{
+      display:inline-block; margin-top:4px;
+      background:#1b2448; border:1px solid #2a386b; color:#cbd5ff;
+      border-radius:999px; padding:4px 10px; font-size:12px
+    }
+    .cta{
+      display:inline-block; margin-top:16px;
+      background:#3a6eff; border:1px solid #6ea8ff; color:#fff;
+      text-decoration:none; font-weight:700; border-radius:12px;
+      padding:12px 18px
+    }
+    .panel{
+      margin-top:18px; background:#0c1330;
+      border:1px solid var(--border); border-radius:14px; padding:16px
+    }
+    .url{
+      word-break:break-all; color:#cfe1ff; background:#0a1128;
+      border:1px solid var(--border); padding:8px; border-radius:8px;
+      margin-top:8px; font-size:13px
+    }
+    .btns{ display:flex; gap:10px; justify-content:center; margin-top:12px; flex-wrap:wrap; overflow:visible }
+    button{
+      appearance:none; background:#1a2550; border:1px solid #3a4a86;
+      color:#e8edff; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer
+    }
+    .hint{ color:var(--mut); font-size:13px; margin-top:10px }
+  </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <img alt="icon" src="/Product-Research/icons/icon-192.png" width="64" height="64" style="border-radius:14px;border:1px solid #223066;background:#0c1330">
+      <img alt="icon" src="/Product-Research/icons/icon-192.png" width="64" height="64"
+           style="border-radius:14px;border:1px solid #223066;background:#0c1330">
       <h1>Product Rater</h1>
       <div class="tag">Installable • Works offline • No login</div>
 
@@ -38,35 +76,35 @@
           <button id="copyBtn">Copy link</button>
           <button id="shareBtn">Share…</button>
         </div>
-        <div class="hint">Android: “Install App” in menu • iPhone: Share → Add to Home Screen</div>
+        <div class="hint">Android: ⋮ → <b>Add to Home screen</b> • iPhone: Share → <b>Add to Home Screen</b></div>
       </div>
     </div>
   </div>
 
-<script>
-  // Your app URL
-  const APP_URL = "https://dshree004.github.io/Product-Research/";
+  <script>
+    // Your app URL
+    const APP_URL = "https://dshree004.github.io/Product-Research/";
 
-  // Sync UI
-  document.getElementById('appUrl').textContent = APP_URL;
-  document.getElementById('openApp').href = APP_URL;
+    // Sync UI
+    document.getElementById('appUrl').textContent = APP_URL;
+    document.getElementById('openApp').href = APP_URL;
 
-  // Copy to clipboard
-  document.getElementById('copyBtn').onclick = async () => {
-    try { await navigator.clipboard.writeText(APP_URL); alert("Link copied!"); }
-    catch { alert("Copy failed. Long-press the link to copy."); }
-  };
+    // Copy to clipboard
+    document.getElementById('copyBtn').onclick = async () => {
+      try { await navigator.clipboard.writeText(APP_URL); alert("Link copied!"); }
+      catch { alert("Copy failed. Long-press the link to copy."); }
+    };
 
-  // Native share (fallback to copy)
-  document.getElementById('shareBtn').onclick = async () => {
-    if (navigator.share) {
-      try { await navigator.share({ title: "Product Rater", text: "Try this offline app:", url: APP_URL }); }
-      catch(e){} // user canceled
-    } else {
-      await navigator.clipboard.writeText(APP_URL);
-      alert("Link copied! Share it anywhere.");
-    }
-  };
-</script>
+    // Native share (fallback to copy)
+    document.getElementById('shareBtn').onclick = async () => {
+      if (navigator.share) {
+        try { await navigator.share({ title: "Product Rater", text: "Try this offline app:", url: APP_URL }); }
+        catch(e){} // user canceled
+      } else {
+        await navigator.clipboard.writeText(APP_URL);
+        alert("Link copied! Share it anywhere.");
+      }
+    };
+  </script>
 </body>
 </html>
