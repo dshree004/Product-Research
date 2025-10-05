@@ -11,6 +11,9 @@
 <link rel="apple-touch-icon" href="/Product-Research/icons/icon-192.png">
 <meta name="theme-color" content="#0b1020">
 
+<!-- ZIP builder (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
 <style>
   :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff;--border:#223066;--gutter:18px}
   *,*::before,*::after{box-sizing:border-box}
@@ -42,6 +45,11 @@
   button{background:#1a55ff;border:none;cursor:pointer}
   button:hover{background:#3a6eff}
 
+  /* small secondary button */
+  .btn-sm{width:auto;display:inline-block;padding:6px 10px;font-size:13px;border-radius:8px;
+          background:#23306b;border:1px solid #3a4a86}
+  .btn-sm:disabled{opacity:.6;cursor:not-allowed}
+
   .rating{display:grid;grid-template-columns:repeat(5,minmax(44px,1fr));gap:8px}
   .rating input{display:none}
   .rating label{background:#192040;text-align:center;padding:10px;border-radius:10px;cursor:pointer}
@@ -56,6 +64,8 @@
   .table{width:100%;border-collapse:collapse;table-layout:fixed}
   .table th,.table td{border-top:1px solid var(--border);padding:10px;text-align:left;vertical-align:top;word-wrap:break-word}
   .table th{color:#a9c7ff;font-weight:700}
+
+  .toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 
   .cards{display:none;gap:10px}
   .entry-card{
@@ -107,8 +117,9 @@
   </div>
 
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div class="toprow">
       <h2 style="margin:0 0 8px">Your entries <span id="count" class="muted"></span></h2>
+      <button id="exportZip" class="btn-sm" disabled>Export ZIP</button>
     </div>
 
     <!-- Mobile cards -->
@@ -125,6 +136,7 @@
   const $ = s => document.querySelector(s);
   function escapeHTML(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
   function getRating(){ const r=document.querySelector('input[name="rating"]:checked'); return r?parseInt(r.value,10):0; }
+  function safeFile(s){ return (s||'item').toLowerCase().replace(/[^a-z0-9._-]+/g,'-').slice(0,40); }
 
   /* ---------- Photo preview + compress to square 256px ---------- */
   const TARGET = 256;  // thumbnail size
@@ -161,8 +173,8 @@
     }
   });
 
-  /* ---------- IndexedDB (bump name/version for clean start) ---------- */
-  const DB_NAME='ProductRaterDB_v8';  // bumping name avoids old broken stores
+  /* ---------- IndexedDB (clean) ---------- */
+  const DB_NAME='ProductRaterDB_v8';
   const DB_VERSION=2;
   let db;
   function openDB(){
@@ -199,10 +211,60 @@
     });
   }
 
+  /* ---------- Export ZIP (data.json + photos/) ---------- */
+  async function exportZIP(items){
+    if (!window.JSZip){ alert('ZIP library not loaded. Please go online once and try again.'); return; }
+    const zip = new JSZip();
+
+    const payload = { version: 2, exportedAt: new Date().toISOString(), items: [] };
+    let photoIndex = 1;
+
+    for (const it of items){
+      const clean = {
+        name: it.name || '',
+        category: it.category || '',
+        sku: it.sku || '',
+        rating: it.rating || 0,
+        notes: it.notes || '',
+        ts: it.ts || Date.now(),
+        photoFile: ''
+      };
+      if (it.photo){
+        const m = it.photo.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+        if (m){
+          const mime = m[1];
+          const b64  = m[2];
+          const ext  = (mime.split('/')[1] || 'jpg').replace('jpeg','jpg');
+          const fname = `${String(photoIndex).padStart(3,'0')}-${safeFile(it.name)}.${ext}`;
+          zip.file(`photos/${fname}`, b64, { base64: true });
+          clean.photoFile = `photos/${fname}`;
+          photoIndex++;
+        }
+      }
+      payload.items.push(clean);
+    }
+
+    zip.file('data.json', JSON.stringify(payload, null, 2));
+
+    const blob = await zip.generateAsync({ type:'blob' });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `product_rater_${new Date().toISOString().slice(0,10)}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  $('#exportZip').addEventListener('click', async () => {
+    const items = (await getAllEntries()).sort((a,b)=> (b.ts||0)-(a.ts||0));
+    if (!items.length) { alert('No entries to export.'); return; }
+    exportZIP(items);
+  });
+
   /* ---------- Render (mobile cards + desktop table) ---------- */
   async function render(){
     const items=(await getAllEntries()).sort((a,b)=> (b.ts||0)-(a.ts||0));
     $('#count').textContent = items.length ? `(${items.length})` : '';
+    $('#exportZip').disabled = items.length === 0;
 
     // Mobile cards
     const cards=$('#cards');
@@ -281,7 +343,7 @@
 
   /* ---------- PWA: register SW (bump to bust cache) ---------- */
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/Product-Research/sw.js?v=12').catch(()=>{});
+    navigator.serviceWorker.register('/Product-Research/sw.js?v=13').catch(()=>{});
   }
 </script>
 </body>
