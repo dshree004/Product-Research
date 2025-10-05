@@ -5,89 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Share — Product Rater</title>
 
-  <!-- PWA hooks so Android can show the A2HS prompt from this page -->
+  <!-- PWA hooks -->
   <link rel="manifest" href="/Product-Research/manifest.webmanifest">
   <link rel="icon" href="/Product-Research/icons/icon-192.png">
   <link rel="apple-touch-icon" href="/Product-Research/icons/icon-192.png">
   <meta name="theme-color" content="#0b1020" />
 
   <style>
-    :root{
-      --bg:#0b1020; --card:#111832; --mut:#aab3d4; --border:#223066;
-      --pad:24px; --gap:14px;
-    }
+    :root{ --bg:#0b1020; --card:#111832; --mut:#aab3d4; --border:#223066; --pad:24px; --gap:14px; }
     *,*::before,*::after{ box-sizing:border-box; }
-    html,body{ height:auto; min-height:100dvh; -webkit-text-size-adjust:100%; }
+    html,body{ min-height:100dvh; -webkit-text-size-adjust:100%; }
     body{
-      margin:0; background:var(--bg); color:#eef;
-      font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      display:flex; justify-content:center; align-items:flex-start;
-      padding:18px;
-      padding-left:  max(18px, env(safe-area-inset-left));
-      padding-right: max(18px, env(safe-area-inset-right));
+      margin:0; background:var(--bg); color:#eef; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      display:flex; justify-content:center; align-items:flex-start; padding:18px;
+      padding-left:max(18px, env(safe-area-inset-left));
+      padding-right:max(18px, env(safe-area-inset-right));
       padding-bottom:max(18px, env(safe-area-inset-bottom));
     }
     .wrap{ max-width:700px; width:100%; }
     .card{
-      background:linear-gradient(180deg,#101936,#0e1530);
-      border:1px solid var(--border);
-      border-radius:18px;
-      box-shadow:0 10px 30px rgba(10,18,45,.35);
-      padding:calc(var(--pad) + 4px);
-      text-align:center;
-      overflow:visible;
+      background:linear-gradient(180deg,#101936,#0e1530); border:1px solid var(--border);
+      border-radius:18px; box-shadow:0 10px 30px rgba(10,18,45,.35); padding:calc(var(--pad) + 4px);
+      text-align:center; overflow:visible;
     }
     h1{ margin:10px 0 6px; color:#8ec5ff }
-    .tag{
-      display:inline-block; margin-top:4px;
-      background:#1b2448; border:1px solid #2a386b; color:#cbd5ff;
-      border-radius:999px; padding:4px 10px; font-size:12px
-    }
+    .tag{ display:inline-block; margin-top:4px; background:#1b2448; border:1px solid #2a386b; color:#cbd5ff;
+          border-radius:999px; padding:4px 10px; font-size:12px }
     .cta{
-      display:inline-block; margin-top:16px;
-      background:#3a6eff; border:1px solid #6ea8ff; color:#fff;
-      text-decoration:none; font-weight:700; border-radius:12px;
-      padding:12px 18px
+      display:inline-block; margin-top:16px; background:#3a6eff; border:1px solid #6ea8ff; color:#fff;
+      text-decoration:none; font-weight:700; border-radius:12px; padding:12px 18px
     }
-    .panel{
-      margin-top:18px; background:#0c1330;
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:calc(var(--pad) - 6px);
-      overflow:visible;
-    }
-    .url{
-      word-break:break-all; color:#cfe1ff; background:#0a1128;
-      border:1px solid var(--border); padding:12px; border-radius:10px;
-      margin-top:10px; font-size:14px
-    }
-
-    /* ALWAYS stacked full-width buttons: zero chance of clipping */
-    .btns{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:var(--gap);
-      margin-top:14px;
-      width:100%;
-    }
+    .panel{ margin-top:18px; background:#0c1330; border:1px solid var(--border); border-radius:14px; padding:calc(var(--pad) - 6px); }
+    /* Stacked full-width buttons (can wrap text—no clipping) */
+    .btns{ display:grid; grid-template-columns:1fr; gap:var(--gap); margin-top:6px; }
     button{
-      -webkit-appearance:none; appearance:none;
-      background:#1a2550; border:1px solid #3a4a86; color:#e8edff;
-      border-radius:12px; padding:14px 22px; font-weight:600; cursor:pointer;
-      display:flex; align-items:center; justify-content:center;
-      min-height:52px; line-height:1.3; text-align:center;
-      white-space:normal; word-break:keep-all;
-      width:100%; box-sizing:border-box; overflow:visible; text-overflow:clip;
-      font-size:16px;
+      -webkit-appearance:none; appearance:none; background:#1a2550; border:1px solid #3a4a86; color:#e8edff;
+      border-radius:12px; padding:14px 22px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      min-height:52px; line-height:1.3; white-space:normal; word-break:keep-all; width:100%; font-size:16px;
     }
     button:disabled{ opacity:.6; cursor:not-allowed; }
     .hint{ color:var(--mut); font-size:13px; margin-top:12px }
     .ok{ background:#238636; border-color:#2ea043 }
-
-    @media (min-width:980px){
-      /* Optional: on wide desktops, two columns look nice */
-      .btns{ grid-template-columns: 1fr 1fr; }
-    }
+    @media (min-width:980px){ .btns{ grid-template-columns:1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -98,17 +57,15 @@
       <h1>Product Rater</h1>
       <div class="tag">Installable • Works offline • No login</div>
 
-      <a class="cta" id="openApp" href="https://dshree004.github.io/Product-Research/">🚀 Open the App</a>
+      <!-- No visible URL anywhere -->
+      <a class="cta" id="openApp" href="#">🚀 Open the App</a>
 
       <div class="panel">
         <h3 style="margin:0 0 10px">Share or Add to Home screen</h3>
-        <!-- Visible URL WITHOUT protocol -->
-        <div class="url" id="appUrl">dshree004.github.io/Product-Research/</div>
 
         <div class="btns">
           <button id="copyBtn">Copy link</button>
           <button id="shareBtn">Share…</button>
-          <!-- Shown only on Android when beforeinstallprompt fires -->
           <button id="installBtn" style="display:none">Add to Home screen</button>
         </div>
 
@@ -120,45 +77,43 @@
   </div>
 
   <script>
-    // Full app URL (kept for open/copy/share), but display without protocol
+    /* -------- Set your app URL here (full https, used for open/copy/share) -------- */
     const APP_URL = "https://dshree004.github.io/Product-Research/";
-    const DISPLAY_URL = APP_URL.replace(/^https?:\/\//, "");
 
-    // Sync UI
-    document.getElementById('appUrl').textContent = DISPLAY_URL;
+    /* Open app */
     document.getElementById('openApp').href = APP_URL;
 
-    // Copy to clipboard (full https URL)
+    /* Copy full URL (even though we don’t show it) */
     document.getElementById('copyBtn').onclick = async () => {
       try { await navigator.clipboard.writeText(APP_URL); alert("Link copied!"); }
       catch { alert("Copy failed. Long-press the link to copy."); }
     };
 
-    // Native share (full https URL; fallback to copy)
+    /* Native share (fallback to copy) */
     document.getElementById('shareBtn').onclick = async () => {
       if (navigator.share) {
         try { await navigator.share({ title: "Product Rater", text: "Try this offline app:", url: APP_URL }); }
-        catch(e){} // user canceled
+        catch(e){} // user cancelled
       } else {
         await navigator.clipboard.writeText(APP_URL);
         alert("Link copied! Share it anywhere.");
       }
     };
 
-    // ---- One-tap "Add to Home screen" (Android/Chrome) ----
+    /* ---- One-tap Add to Home screen (Android/Chrome) ---- */
     let deferredPrompt;
     const installBtn = document.getElementById('installBtn');
 
-    // If already installed, hide the hint/button
+    // Hide A2HS UI if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     if (isStandalone) {
       installBtn.style.display = 'none';
       document.getElementById('hintText').textContent = "Already added to Home screen ✔";
     }
 
-    // Chrome/Edge will fire this when install criteria are met
+    // Show our A2HS button when criteria are met
     window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();        // no mini-infobar
+      e.preventDefault();
       deferredPrompt = e;
       installBtn.style.display = 'flex';
 
@@ -179,15 +134,15 @@
       };
     });
 
-    // When actually installed
+    // Installed callback
     window.addEventListener('appinstalled', () => {
       installBtn.style.display = 'none';
       document.getElementById('hintText').textContent = "Added to Home screen ✔";
     });
 
-    // Register SW so this page satisfies installability checks too
+    // Register SW so this page qualifies for A2HS; bump version to bust cache
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/Product-Research/sw.js?v=7').catch(()=>{});
+      navigator.serviceWorker.register('/Product-Research/sw.js?v=8').catch(()=>{});
     }
   </script>
 </body>
