@@ -14,10 +14,10 @@
   <style>
     :root{
       --bg:#0b1020; --card:#111832; --mut:#aab3d4; --acc:#6ea8ff; --border:#223066;
-      --pad:24px; --gap:12px;
+      --pad:24px; --gap:16px;
     }
     *,*::before,*::after{ box-sizing:border-box; }
-    html,body{ height:auto; min-height:100dvh; }
+    html,body{ height:auto; min-height:100dvh; -webkit-text-size-adjust:100%; }
     body{
       margin:0; background:var(--bg); color:#eef;
       font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
@@ -62,30 +62,29 @@
       margin-top:10px; font-size:14px
     }
 
-    /* NEW: responsive grid for buttons — no squeeze, no clipping */
+    /* Responsive grid for buttons — no squeeze, no clipping */
     .btns{
       display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap:var(--gap);
       margin-top:14px;
       width:100%;
+      overflow:visible;
     }
-    .btns button{
-      width:100%;  /* each button fills its grid cell */
-      white-space:nowrap;
-    }
-
     button{
-      appearance:none; background:#1a2550; border:1px solid #3a4a86;
-      color:#e8edff; border-radius:12px; padding:12px 16px; font-weight:600; cursor:pointer
+      -webkit-appearance:none; appearance:none;
+      background:#1a2550; border:1px solid #3a4a86; color:#e8edff;
+      border-radius:12px; padding:12px 22px; font-weight:600; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center;
+      min-height:46px; line-height:1.25; white-space:nowrap;
+      width:100%; box-sizing:border-box; overflow:visible; text-overflow:clip;
     }
     button:disabled{ opacity:.6; cursor:not-allowed; }
     .hint{ color:var(--mut); font-size:13px; margin-top:12px }
     .ok{ background:#238636; border-color:#2ea043 }
 
-    /* Slightly larger padding on very small phones for comfort */
     @media (max-width:420px){
-      :root{ --pad:26px; --gap:14px; }
+      :root{ --pad:26px; --gap:18px; }
     }
   </style>
 </head>
@@ -157,7 +156,7 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();        // no mini-infobar
       deferredPrompt = e;
-      installBtn.style.display = 'inline-block';
+      installBtn.style.display = 'inline-flex';
 
       installBtn.onclick = async () => {
         installBtn.disabled = true;
@@ -184,7 +183,7 @@
 
     // Register service worker so this page satisfies installability checks too
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/Product-Research/sw.js?v=4').catch(()=>{});
+      navigator.serviceWorker.register('/Product-Research/sw.js?v=5').catch(()=>{});
     }
   </script>
 </body>
