@@ -6,8 +6,8 @@
 <title>Product Rater (Offline)</title>
 <style>
   body{font-family:Inter,Arial,sans-serif;background:#0b1020;color:#eef;margin:0;padding:20px}
-  .card{background:#111832;padding:16px;border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.45);max-width:480px;margin:0 auto 16px}
-  h1{color:#8ec5ff;text-align:center}
+  .card{background:#111832;padding:16px;border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.45);max-width:520px;margin:0 auto 16px}
+  h1{color:#8ec5ff;text-align:center;margin:0 0 12px}
   label{font-weight:600;display:block;margin-top:8px}
   input,textarea,button{width:100%;padding:8px;border-radius:8px;border:1px solid #223066;background:#1b2444;color:#eef;margin-top:6px}
   button{background:#1a55ff;border:none;cursor:pointer} button:hover{background:#3a6eff}
@@ -68,19 +68,26 @@
     return r ? parseInt(r.value,10) : 0;
   }
 
-  // Force a clean schema (v3). Recreates the store.
+  // Open DB (v4) — store WITHOUT keyPath (no 'id' needed)
   function openDB(){
     return new Promise((resolve, reject)=>{
-      const req = indexedDB.open('ProductRaterDB', 3);
+      const req = indexedDB.open('ProductRaterDB', 4);
       req.onupgradeneeded = (e)=>{
         const db = e.target.result;
         if (db.objectStoreNames.contains('entries')) db.deleteObjectStore('entries');
-        db.createObjectStore('entries', { keyPath: 'id', autoIncrement: true });
+        db.createObjectStore('entries', { autoIncrement: true }); // no keyPath
       };
       req.onsuccess = e => resolve(e.target.result);
-      req.onerror = e => reject(e.target.error);
+      req.onerror   = e => reject(e.target.error);
     });
   }
+
+  async function ensureDB(){
+    if (!db) db = await openDB();
+    return db;
+  }
+
+  function escapeHTML(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
   function render(){
     const list = $('#list'); list.innerHTML = '';
@@ -90,7 +97,7 @@
     req.onsuccess = ()=>{
       const items = req.result || [];
       if (!items.length){ list.innerHTML = '<p>No entries yet.</p>'; return; }
-      items.sort((a,b)=>b.ts-a.ts).forEach(it=>{
+      items.forEach(it=>{
         const row = document.createElement('div'); row.className='entry';
         const media = it.photo ? `<img class="thumb" src="${it.photo}" alt="">`
                                : `<div class="thumb">No photo</div>`;
@@ -99,8 +106,6 @@
       });
     };
   }
-
-  function escapeHTML(s){return (s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));}
 
   // Photo preview
   $('#photo').addEventListener('change', e=>{
@@ -112,6 +117,33 @@
     reader.readAsDataURL(file);
   });
 
+  // Safe add with auto-recreate on DataError
+  async function addEntrySafe(entry){
+    await ensureDB();
+    try{
+      await new Promise((res,rej)=>{
+        const tx = db.transaction('entries','readwrite');
+        const req = tx.objectStore('entries').add(entry); // no id
+        req.onsuccess = () => res();
+        req.onerror   = () => rej(req.error);
+      });
+    }catch(err){
+      if (err && err.name === 'DataError'){
+        // old DB on disk — delete and recreate, then retry once
+        await new Promise(done => { const del = indexedDB.deleteDatabase('ProductRaterDB'); del.onsuccess=del.onerror=done; });
+        db = await openDB();
+        await new Promise((res,rej)=>{
+          const tx = db.transaction('entries','readwrite');
+          const req = tx.objectStore('entries').add(entry);
+          req.onsuccess = () => res();
+          req.onerror   = () => rej(req.error);
+        });
+      } else {
+        throw err;
+      }
+    }
+  }
+
   // Save
   $('#form').addEventListener('submit', async e=>{
     e.preventDefault();
@@ -120,7 +152,6 @@
     if(!name || !rating){ alert('Please enter a product name and select a rating.'); return; }
 
     const entry = {
-      // IMPORTANT: no 'id' field here (autoIncrement generates it)
       name,
       category: $('#category').value.trim(),
       sku: $('#sku').value.trim(),
@@ -129,27 +160,20 @@
       photo: $('#preview').dataset?.dataurl || '',
       ts: Date.now()
     };
-    if ('id' in entry) delete entry.id; // extra safety
 
-    const tx = db.transaction('entries','readwrite');
-    const store = tx.objectStore('entries');
-    const req = store.add(entry);
-    req.onsuccess = ()=>{
+    try{
+      await addEntrySafe(entry);
       $('#form').reset();
       const img = $('#preview'); img.style.display='none'; delete img.dataset.dataurl;
       render();
       alert('✅ Saved');
-    };
-    req.onerror = ev=>{
-      console.error('Save failed:', ev.target.error);
-      alert('Save failed: ' + (ev.target.error?.message || ev.target.error));
-    };
+    }catch(err){
+      console.error('Save failed:', err);
+      alert('Save failed: ' + (err?.message || err));
+    }
   });
 
-  (async ()=>{
-    db = await openDB();
-    render();
-  })();
+  (async ()=>{ db = await openDB(); render(); })();
 </script>
 </body>
 </html>
