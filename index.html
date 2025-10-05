@@ -74,7 +74,7 @@
         </div>
         <div class="muted" style="margin-top:4px">Select a number (1–5). Higher is better.</div>
 
-        <label for="photo" style="margin-top:10px">Photo *</label>
+        <label for="photo" style="margin-top:10px">Photo <span class="muted">(optional)</span></label>
         <input id="photo" type="file" accept="image/*" capture="environment" />
         <img id="preview" alt="preview" style="display:none;margin-top:10px;max-width:100%;border-radius:12px;border:1px solid #223066" />
 
@@ -82,7 +82,7 @@
         <textarea id="notes" placeholder="Taste, quality, price, etc."></textarea>
 
         <div class="row" style="justify-content:space-between;margin-top:10px">
-          <div class="muted">Required: name, rating, photo</div>
+          <div class="muted">Required: name & rating</div>
           <div class="toolbar">
             <button type="button" class="btn" id="demoBtn">Add demo item</button>
             <button class="btn" id="saveBtn" type="submit">Save</button>
@@ -103,7 +103,7 @@
         </div>
       </div>
       <div id="list" class="list" style="margin-top:10px"></div>
-      <div id="emptyState" class="empty" style="display:none;margin-top:10px">No entries yet. Add one above. If Save doesn't show it, ensure you've selected a <strong>rating number</strong> and <strong>added a photo</strong>.</div>
+      <div id="emptyState" class="empty" style="display:none;margin-top:10px">No entries yet. Add one above. If Save doesn't show it, ensure you've selected a <strong>rating number</strong> and entered a <strong>name</strong>.</div>
     </section>
   </div>
 
@@ -174,8 +174,34 @@
   }
 
   // Save
-  form.addEventListener('submit', async (e)=>{
-    e.preventDefault();
+  // Save (works on both form submit and Save button click)
+async function handleSave(e){
+  if(e) e.preventDefault();
+  const name = $('#name').value.trim();
+  const missing=[];
+  if(!name) missing.push('product name');
+  if(currentRating===0) missing.push('rating (1–5)');
+  if(missing.length){
+    alert('Please fill: '+missing.join(', '));
+    return;
+  }
+  const photoDataURL = preview.dataset.dataurl || '';
+  const entry = { id: editingId ?? undefined, name, category:$('#category').value.trim(), sku:$('#sku').value.trim(), rating:currentRating, notes:$('#notes').value.trim(), photoDataURL, ts: editingId ? (window.__existingTS||Date.now()) : Date.now() };
+  await idb.open(); if(editingId){ await idb.put('entries',entry); } else { entry.id = await idb.add('entries',entry); }
+  clearForm(); await render(); showToast('✅ Saved');
+};
+  const name = $('#name').value.trim();
+  if(!name){ alert('Please enter product name'); return; }
+  if(currentRating===0){ alert('Please choose a rating (1–5)'); return; }
+  const photoDataURL = preview.dataset.dataurl || '';
+  if(!photoDataURL){ alert('Please add a photo'); return; }
+  const entry = { id: editingId ?? undefined, name, category:$('#category').value.trim(), sku:$('#sku').value.trim(), rating:currentRating, notes:$('#notes').value.trim(), photoDataURL, ts: editingId ? (window.__existingTS||Date.now()) : Date.now() };
+  await idb.open(); if(editingId){ await idb.put('entries',entry); } else { entry.id = await idb.add('entries',entry); }
+  clearForm(); await render(); showToast('✅ Saved');
+}
+
+form.addEventListener('submit', handleSave);
+$('#saveBtn').addEventListener('click', handleSave);
     const name = $('#name').value.trim();
     if(!name){ alert('Please enter product name'); return; }
     if(currentRating===0){ alert('Please choose a rating (1–5)'); return; }
@@ -207,8 +233,11 @@
 
   function cardHtml(it){
     const date=new Date(it.ts).toLocaleString();
+    const media = it.photoDataURL
+      ? `<img class=\"thumb\" src=\"${it.photoDataURL}\" alt=\"${escapeHtml(it.name)}\" />`
+      : `<div class=\"thumb\" style=\"display:flex;align-items:center;justify-content:center;color:#9db0e0;font-size:12px\">No photo</div>`;
     return `<article class="item" data-id="${it.id}">
-      <img class="thumb" src="${it.photoDataURL}" alt="${escapeHtml(it.name)}" />
+      ${media}
       <div class="item-body">
         <div class="row" style="justify-content:space-between"><strong>${escapeHtml(it.name)}</strong> <span class="pill">${escapeHtml(it.category||'')}</span></div>
         <div class="muted">${date}${it.sku?` • SKU ${escapeHtml(it.sku)}`:''}</div>
@@ -227,7 +256,8 @@
   document.getElementById('importBtn').addEventListener('click', ()=> importInput.click());
   importInput.addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const text=await f.text(); const arr=JSON.parse(text); if(!Array.isArray(arr)) throw new Error('Invalid JSON'); await idb.open(); for(const it of arr){ const rec={...it,id:undefined}; await idb.add('entries',rec);} await render(); showToast('✅ Imported'); }catch(err){ alert('Import failed: '+err.message);} finally{ e.target.value=''; } });
   document.getElementById('exportJson').addEventListener('click', async()=>{ await idb.open(); const items=await idb.getAll('entries'); const blob=new Blob([JSON.stringify(items,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='product_ratings_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.json'; a.click(); URL.revokeObjectURL(url); });
-  document.getElementById('exportCsv').addEventListener('click', async()=>{ await idb.open(); const items=await idb.getAll('entries'); const headers=['timestamp','name','category','sku','rating','notes']; const rows=items.map(x=>[new Date(x.ts).toISOString(), q(x.name), q(x.category), q(x.sku), x.rating, q(x.notes)].join(',')); const csv=[headers.join(','),...rows].join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='product_ratings_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv'; a.click(); URL.revokeObjectURL(url); function q(s){ s=(s||'').replaceAll('"','""'); return `"${s}"`; } });
+  document.getElementById('exportCsv').addEventListener('click', async()=>{ await idb.open(); const items=await idb.getAll('entries'); const headers=['timestamp','name','category','sku','rating','notes']; const rows=items.map(x=>[new Date(x.ts).toISOString(), q(x.name), q(x.category), q(x.sku), x.rating, q(x.notes)].join(',')); const csv=[headers.join(','),...rows].join('
+'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='product_ratings_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv'; a.click(); URL.revokeObjectURL(url); function q(s){ s=(s||'').replaceAll('"','""'); return `"${s}"`; } });
   document.getElementById('clearAll').addEventListener('click', async()=>{ if(!confirm('Delete ALL entries?')) return; await idb.open(); await idb.clear('entries'); await render(); });
 
   // Demo item
