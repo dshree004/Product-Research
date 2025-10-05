@@ -55,6 +55,11 @@
   .rating label{background:#192040;text-align:center;padding:10px;border-radius:10px;cursor:pointer}
   .rating input:checked+label{background:#4473ff;color:#fff}
 
+  .yn{display:flex;gap:8px;flex-wrap:wrap}
+  .yn input{display:none}
+  .yn label{background:#192040;padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid var(--border)}
+  .yn input:checked+label{background:#4473ff;color:#fff}
+
   .preview{width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid var(--border);display:none}
   .thumb{width:48px;height:48px;object-fit:cover;border-radius:8px;background:#0b132b}
 
@@ -74,7 +79,7 @@
   }
   .entry-card .title{font-weight:700;color:#cfe1ff}
   .entry-card .meta{font-size:13px;color:#aab3d4}
-  .entry-card .pill{display:inline-block;background:#1b2448;border:1px solid #2a386b;border-radius:999px;padding:2px 8px;font-size:12px;color:#cbd5ff;margin-right:6px}
+  .pill{display:inline-block;background:#1b2448;border:1px solid #2a386b;border-radius:999px;padding:2px 8px;font-size:12px;color:#cbd5ff;margin-right:6px}
 
   @media (max-width:640px){
     .table-wrap{display:none}
@@ -90,24 +95,36 @@
       <label>Product name *</label>
       <input id="name" required autocomplete="off" />
 
-      <label>Category</label>
-      <input id="category" autocomplete="off" />
-
-      <label>Code/SKU</label>
-      <input id="sku" autocomplete="off" />
-
-      <label>Rating *</label>
-      <div class="rating">
-        <input id="r1" type="radio" name="rating" value="1"><label for="r1">1</label>
-        <input id="r2" type="radio" name="rating" value="2"><label for="r2">2</label>
-        <input id="r3" type="radio" name="rating" value="3"><label for="r3">3</label>
-        <input id="r4" type="radio" name="rating" value="4"><label for="r4">4</label>
-        <input id="r5" type="radio" name="rating" value="5"><label for="r5">5</label>
-      </div>
-
       <label>Photo <span class="muted">(optional · auto-sized to a small square)</span></label>
       <input id="photo" type="file" accept="image/*" capture="environment" />
       <img id="preview" class="preview" alt="preview" />
+
+      <label>Is it one piece?</label>
+      <div class="yn">
+        <input id="oneY" type="radio" name="onePiece" value="yes"><label for="oneY">Yes</label>
+        <input id="oneN" type="radio" name="onePiece" value="no"><label for="oneN">No</label>
+      </div>
+
+      <label>Is it an electronic product?</label>
+      <div class="yn">
+        <input id="elecY" type="radio" name="electronic" value="yes"><label for="elecY">Yes</label>
+        <input id="elecN" type="radio" name="electronic" value="no"><label for="elecN">No</label>
+      </div>
+
+      <label>Have you seen this before?</label>
+      <div class="yn">
+        <input id="seenY" type="radio" name="seenBefore" value="yes"><label for="seenY">Yes</label>
+        <input id="seenN" type="radio" name="seenBefore" value="no"><label for="seenN">No</label>
+      </div>
+
+      <label>How niche is it on a scale of 1 to 5? *</label>
+      <div class="rating">
+        <input id="n1" type="radio" name="niche" value="1"><label for="n1">1</label>
+        <input id="n2" type="radio" name="niche" value="2"><label for="n2">2</label>
+        <input id="n3" type="radio" name="niche" value="3"><label for="n3">3</label>
+        <input id="n4" type="radio" name="niche" value="4"><label for="n4">4</label>
+        <input id="n5" type="radio" name="niche" value="5"><label for="n5">5</label>
+      </div>
 
       <label>Notes</label>
       <textarea id="notes" rows="3"></textarea>
@@ -135,8 +152,11 @@
   /* ---------- Helpers ---------- */
   const $ = s => document.querySelector(s);
   function escapeHTML(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-  function getRating(){ const r=document.querySelector('input[name="rating"]:checked'); return r?parseInt(r.value,10):0; }
-  function safeFile(s){ return (s||'item').toLowerCase().replace(/[^a-z0-9._-]+/g,'-').slice(0,40); }
+  const getRadio = (name)=>document.querySelector(`input[name="${name}"]:checked`);
+  const getBool  = (name)=>{ const r=getRadio(name); return r ? r.value==='yes' : null; };
+  const getNiche = ()=>{ const r=getRadio('niche'); return r?parseInt(r.value,10):0; };
+  const yesNo = (v)=> v===true?'Yes': v===false?'No':'—';
+  const safeFile = (s)=> (s||'item').toLowerCase().replace(/[^a-z0-9._-]+/g,'-').slice(0,40);
 
   /* ---------- Photo preview + compress to square 256px ---------- */
   const TARGET = 256;  // thumbnail size
@@ -150,13 +170,12 @@
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = TARGET;
     const ctx = canvas.getContext('2d');
-    // cover-fit crop to square
     const scale = Math.max(TARGET/img.width, TARGET/img.height);
     const w = img.width * scale, h = img.height * scale;
     const x = (TARGET - w)/2, y = (TARGET - h)/2;
     ctx.fillStyle = '#000'; ctx.fillRect(0,0,TARGET,TARGET);
     ctx.drawImage(img, x, y, w, h);
-    return canvas.toDataURL('image/jpeg', 0.8); // small, fast
+    return canvas.toDataURL('image/jpeg', 0.8);
   }
 
   $('#photo').addEventListener('change', async e=>{
@@ -166,15 +185,14 @@
       const thumb = await fileToSquareThumb(file);
       img.src = thumb; img.style.display='block'; img.dataset.dataurl = thumb;
     }catch{
-      // fallback: show raw preview
       const fr = new FileReader();
       fr.onload = ev => { img.src = ev.target.result; img.style.display='block'; img.dataset.dataurl = ev.target.result; };
       fr.readAsDataURL(file);
     }
   });
 
-  /* ---------- IndexedDB (clean) ---------- */
-  const DB_NAME='ProductRaterDB_v8';
+  /* ---------- IndexedDB ---------- */
+  const DB_NAME='ProductRaterDB_v8';   // keep same to preserve existing items
   const DB_VERSION=2;
   let db;
   function openDB(){
@@ -216,19 +234,25 @@
     if (!window.JSZip){ alert('ZIP library not loaded. Please go online once and try again.'); return; }
     const zip = new JSZip();
 
-    const payload = { version: 2, exportedAt: new Date().toISOString(), items: [] };
+    const payload = { version: 3, exportedAt: new Date().toISOString(), items: [] };
     let photoIndex = 1;
 
     for (const it of items){
+      // Back-compat: map old 'rating' to new 'niche' if needed
+      const niche = (typeof it.niche === 'number' && it.niche>0) ? it.niche
+                    : (typeof it.rating === 'number' ? it.rating : 0);
+
       const clean = {
         name: it.name || '',
-        category: it.category || '',
-        sku: it.sku || '',
-        rating: it.rating || 0,
+        onePiece: typeof it.onePiece === 'boolean' ? it.onePiece : null,
+        electronic: typeof it.electronic === 'boolean' ? it.electronic : null,
+        seenBefore: typeof it.seenBefore === 'boolean' ? it.seenBefore : null,
+        niche: niche,
         notes: it.notes || '',
         ts: it.ts || Date.now(),
         photoFile: ''
       };
+
       if (it.photo){
         const m = it.photo.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
         if (m){
@@ -272,15 +296,18 @@
       const photo = it.photo
         ? `<img class="thumb" src="${it.photo}" alt="">`
         : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#9db0e0">–</div>`;
+      const niche = (typeof it.niche==='number' && it.niche>0) ? it.niche
+                    : (typeof it.rating==='number' ? it.rating : '—');
       return `<div class="entry-card">
         ${photo}
         <div>
           <div class="title">${escapeHTML(it.name)}</div>
           <div class="meta">
-            <span class="pill">${escapeHTML(it.category||'No category')}</span>
-            ${it.sku?`<span class="pill">SKU ${escapeHTML(it.sku)}</span>`:''}
+            <span class="pill">1 piece: ${yesNo(it.onePiece)}</span>
+            <span class="pill">Electronic: ${yesNo(it.electronic)}</span>
+            <span class="pill">Seen before: ${yesNo(it.seenBefore)}</span>
           </div>
-          <div class="meta">Rating: ${it.rating}/5</div>
+          <div class="meta">Niche: ${niche}/5</div>
           ${it.notes?`<div class="meta" style="margin-top:4px">${escapeHTML(it.notes)}</div>`:''}
           <div class="meta" style="margin-top:4px">${new Date(it.ts||Date.now()).toLocaleString()}</div>
         </div>
@@ -290,23 +317,28 @@
     // Desktop table
     const table=$('#table');
     if(!items.length){
-      table.innerHTML = `<thead><tr><th>Photo</th><th>Name & Notes</th><th>Category</th><th>SKU</th><th>Rating</th><th>Saved</th></tr></thead><tbody></tbody>`;
+      table.innerHTML = `<thead><tr>
+        <th>Photo</th><th>Name & Notes</th><th>1 piece?</th><th>Electronic?</th><th>Seen before?</th><th>Niche</th><th>Saved</th>
+      </tr></thead><tbody></tbody>`;
       return;
     }
     const rows = items.map(it=>{
       const date=new Date(it.ts||Date.now()).toLocaleString();
       const photoCell=it.photo?`<img class="thumb" src="${it.photo}" alt="">`:`<span class="muted">—</span>`;
+      const niche = (typeof it.niche==='number' && it.niche>0) ? it.niche
+                    : (typeof it.rating==='number' ? it.rating : '—');
       return `<tr>
         <td>${photoCell}</td>
         <td><b>${escapeHTML(it.name)}</b><br><span class="muted">${escapeHTML(it.notes||'')}</span></td>
-        <td>${escapeHTML(it.category||'—')}</td>
-        <td>${escapeHTML(it.sku||'—')}</td>
-        <td>${it.rating}/5</td>
+        <td>${yesNo(it.onePiece)}</td>
+        <td>${yesNo(it.electronic)}</td>
+        <td>${yesNo(it.seenBefore)}</td>
+        <td>${niche}/5</td>
         <td class="muted">${date}</td>
       </tr>`;
     }).join('');
     table.innerHTML = `<thead>
-      <tr><th>Photo</th><th>Name & Notes</th><th>Category</th><th>SKU</th><th>Rating</th><th>Saved</th></tr>
+      <tr><th>Photo</th><th>Name & Notes</th><th>1 piece?</th><th>Electronic?</th><th>Seen before?</th><th>Niche</th><th>Saved</th></tr>
     </thead><tbody>${rows}</tbody>`;
   }
 
@@ -314,16 +346,17 @@
   $('#form').addEventListener('submit', async e=>{
     e.preventDefault();
     const name=$('#name').value.trim();
-    const rating=getRating();
-    if(!name||!rating){ alert('Please enter a product name and select a rating.'); return; }
+    const niche=getNiche();
+    if(!name||!niche){ alert('Please enter a product name and choose a niche rating.'); return; }
 
     const entry={
       name,
-      category: $('#category').value.trim(),
-      sku: $('#sku').value.trim(),
-      rating,
+      onePiece: getBool('onePiece'),
+      electronic: getBool('electronic'),
+      seenBefore: getBool('seenBefore'),
+      niche,
       notes: $('#notes').value.trim(),
-      photo: $('#preview').dataset?.dataurl || '',  // already small thumbnail
+      photo: $('#preview').dataset?.dataurl || '',
       ts: Date.now()
     };
 
@@ -343,7 +376,7 @@
 
   /* ---------- PWA: register SW (bump to bust cache) ---------- */
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/Product-Research/sw.js?v=13').catch(()=>{});
+    navigator.serviceWorker.register('/Product-Research/sw.js?v=15').catch(()=>{});
   }
 </script>
 </body>
