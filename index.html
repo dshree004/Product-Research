@@ -12,22 +12,63 @@
 <meta name="theme-color" content="#0b1020">
 
 <style>
-  body{font-family:Inter,Arial,sans-serif;background:#0b1020;color:#eef;margin:0;padding:20px}
+  :root{--bg:#0b1020;--card:#111832;--mut:#aab3d4;--acc:#6ea8ff;--border:#223066}
+  html,body{height:100%}
+  body{
+    font-family:Inter,Arial,sans-serif;background:var(--bg);color:#eef;margin:0;
+    padding:20px;overflow-x:hidden;
+  }
   h1{color:#8ec5ff;text-align:center;margin:0 0 16px}
-  .card{background:#111832;padding:16px;border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.45);max-width:720px;margin:0 auto 16px}
+
+  .card{
+    background:#111832;border:1px solid var(--border);border-radius:16px;
+    box-shadow:0 10px 30px rgba(10,18,45,.35);
+    max-width:720px;margin:0 auto 16px;padding:16px;
+  }
+
   label{font-weight:600;display:block;margin-top:10px}
-  input,textarea,button{width:100%;padding:10px;border-radius:8px;border:1px solid #223066;background:#1b2444;color:#eef;margin-top:6px}
-  button{background:#1a55ff;border:none;cursor:pointer} button:hover{background:#3a6eff}
+  input,textarea,button{
+    width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);
+    background:#1b2444;color:#eef;margin-top:6px
+  }
+  textarea{min-height:90px}
+  button{background:#1a55ff;border:none;cursor:pointer}
+  button:hover{background:#3a6eff}
+  button:disabled{opacity:.6;cursor:not-allowed}
+
   .rating{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px}
   .rating input{display:none}
-  .rating label{background:#192040;text-align:center;padding:8px;border-radius:8px;cursor:pointer}
+  .rating label{background:#192040;text-align:center;padding:10px;border-radius:10px;cursor:pointer}
   .rating input:checked+label{background:#4473ff;color:#fff}
-  .preview{width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid #223066;margin-top:10px;display:none}
-  .table{width:100%;border-collapse:collapse;margin-top:8px}
-  .table th,.table td{border-top:1px solid #223066;padding:8px;text-align:left;vertical-align:top}
+
+  .preview{width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid var(--border);margin-top:10px;display:none}
+  .thumb{width:48px;height:48px;object-fit:cover;border-radius:8px;background:#0b132b}
+
+  .table-wrap{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table{width:100%;border-collapse:collapse;table-layout:fixed}
+  .table th,.table td{border-top:1px solid var(--border);padding:10px;text-align:left;vertical-align:top;word-wrap:break-word}
   .table th{color:#a9c7ff;font-weight:700}
-  .thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;background:#0b132b}
   .muted{opacity:.8}
+
+  .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin:8px 0 0}
+  .btn-secondary{background:#23306b}
+  .btn-secondary:hover{background:#2c3a7f}
+
+  .cards{display:none;gap:10px}
+  .entry-card{
+    display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;
+    background:#0c1330;border:1px solid var(--border);border-radius:14px;padding:10px
+  }
+  .entry-card .title{font-weight:700;color:#cfe1ff}
+  .entry-card .meta{font-size:13px;color:#aab3d4}
+  .entry-card .pill{display:inline-block;background:#1b2448;border:1px solid #2a386b;border-radius:999px;padding:2px 8px;font-size:12px;color:#cbd5ff;margin-right:6px}
+
+  @media (max-width: 640px){
+    .card{max-width: 100%; padding:14px}
+    .rating{grid-template-columns: repeat(5, minmax(44px,1fr))}
+    .table-wrap{display:none}
+    .cards{display:grid}
+  }
 </style>
 </head>
 <body>
@@ -65,8 +106,20 @@
   </div>
 
   <div class="card">
-    <h2>Your entries</h2>
-    <div id="list"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0">Your entries</h2>
+      <div class="actions">
+        <button type="button" id="exportCsv" class="btn-secondary" disabled>Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Mobile -->
+    <div id="cards" class="cards"></div>
+
+    <!-- Desktop -->
+    <div class="table-wrap">
+      <table class="table" id="table"></table>
+    </div>
   </div>
 
 <script>
@@ -93,14 +146,13 @@
       req.onupgradeneeded=e=>{
         const db=e.target.result;
         if(db.objectStoreNames.contains('entries')) db.deleteObjectStore('entries');
-        db.createObjectStore('entries',{autoIncrement:true}); // no keyPath => no id needed
+        db.createObjectStore('entries',{autoIncrement:true});
       };
       req.onsuccess=e=>resolve(e.target.result);
       req.onerror=e=>reject(e.target.error);
     });
   }
   async function ensureDB(){ if(!db) db=await openDB(); return db; }
-
   async function addEntry(entry){
     await ensureDB();
     return new Promise((res,rej)=>{
@@ -119,12 +171,74 @@
     });
   }
 
-  /* ---------- Render list (table with all fields) ---------- */
+  /* ---------- CSV Export ---------- */
+  function csvEscape(v){
+    const s = (v ?? '').toString().replace(/\r?\n/g,' ').replace(/"/g,'""');
+    return `"${s}"`;
+  }
+  async function exportCSV(){
+    const items = await getAllEntries();
+    if(!items.length){ alert('No entries to export.'); return; }
+    const header = ['Name','Category','SKU','Rating','Notes','Saved(ISO)'].map(csvEscape).join(',');
+    const rows = items.map(it=>{
+      return [
+        csvEscape(it.name),
+        csvEscape(it.category||''),
+        csvEscape(it.sku||''),
+        csvEscape(it.rating),
+        csvEscape(it.notes||''),
+        csvEscape(new Date(it.ts||Date.now()).toISOString())
+      ].join(',');
+    });
+    const csv = [header, ...rows].join('\r\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `product_rater_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  $('#exportCsv').addEventListener('click', exportCSV);
+
+  /* ---------- Render: mobile cards + desktop table ---------- */
   async function render(){
-    const list=$('#list');
     const items=(await getAllEntries()).sort((a,b)=> (b.ts||0)-(a.ts||0));
-    if(!items.length){ list.innerHTML='<p class="muted">No entries yet.</p>'; return; }
-    const rows=items.map(it=>{
+
+    // Toggle export button
+    const exportBtn = $('#exportCsv');
+    exportBtn.disabled = items.length === 0;
+
+    // Mobile cards
+    const cards=$('#cards');
+    cards.innerHTML = items.map(it=>{
+      const photo = it.photo
+        ? `<img class="thumb" src="${it.photo}" alt="">`
+        : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#9db0e0">–</div>`;
+      return `<div class="entry-card">
+        ${photo}
+        <div>
+          <div class="title">${escapeHTML(it.name)}</div>
+          <div class="meta">
+            <span class="pill">${escapeHTML(it.category||'No category')}</span>
+            ${it.sku?`<span class="pill">SKU ${escapeHTML(it.sku)}</span>`:''}
+          </div>
+          <div class="meta">Rating: ${it.rating}/5</div>
+          ${it.notes?`<div class="meta" style="margin-top:4px">${escapeHTML(it.notes)}</div>`:''}
+          <div class="meta" style="margin-top:4px">${new Date(it.ts||Date.now()).toLocaleString()}</div>
+        </div>
+      </div>`;
+    }).join('') || `<p class="muted">No entries yet.</p>`;
+
+    // Desktop table
+    const table=$('#table');
+    if(!items.length){
+      table.innerHTML = `<thead><tr><th>Photo</th><th>Name & Notes</th><th>Category</th><th>SKU</th><th>Rating</th><th>Saved</th></tr></thead><tbody></tbody>`;
+      return;
+    }
+    const rows = items.map(it=>{
       const date=new Date(it.ts||Date.now()).toLocaleString();
       const photoCell=it.photo?`<img class="thumb" src="${it.photo}" alt="">`:`<span class="muted">—</span>`;
       return `<tr>
@@ -136,10 +250,9 @@
         <td class="muted">${date}</td>
       </tr>`;
     }).join('');
-    list.innerHTML=`<table class="table">
-      <thead><tr><th>Photo</th><th>Name & Notes</th><th>Category</th><th>SKU</th><th>Rating</th><th>Saved</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+    table.innerHTML = `<thead>
+      <tr><th>Photo</th><th>Name & Notes</th><th>Category</th><th>SKU</th><th>Rating</th><th>Saved</th></tr>
+    </thead><tbody>${rows}</tbody>`;
   }
 
   /* ---------- Save ---------- */
@@ -166,7 +279,6 @@
       await render();
       alert('✅ Saved');
     }catch(err){
-      // If an old service worker cached an old DB code, clearing caches can help.
       console.error('Save failed:', err);
       alert('Save failed: '+(err?.message||err));
     }
