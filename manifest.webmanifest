@@ -1,14 +1,13 @@
 {
   "name": "Product Rater",
   "short_name": "Rater",
-  "description": "Rate products with notes & photos — works offline.",
   "start_url": "/Product-Research/index.html",
   "scope": "/Product-Research/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#0b1020",
   "theme_color": "#0b1020",
   "icons": [
+    { "src": "/Product-Research/icons/icon-180.png", "sizes": "180x180", "type": "image/png" },
     { "src": "/Product-Research/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/Product-Research/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
